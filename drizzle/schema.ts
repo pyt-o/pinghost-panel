@@ -10,6 +10,7 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  language: varchar("language", { length: 5 }).default("pl").notNull(), // Language preference: pl, en
   credits: int("credits").default(0).notNull(), // Virtual currency for services
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

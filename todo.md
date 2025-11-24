@@ -63,10 +63,10 @@
 - [x] Utworzenie checkpointu
 
 ## Faza 9: Publikacja
-- [ ] Przygotowanie repozytorium GitHub
-- [ ] Publikacja kodu na GitHub
+- [x] Przygotowanie repozytorium GitHub
+- [x] Publikacja kodu na GitHub
 - [ ] Konfiguracja CI/CD (opcjonalnie)
-- [ ] Dokumentacja deployment
+- [x] Dokumentacja deployment
 
 ## Dodatkowe funkcje (nice-to-have)
 - [ ] Dwuskładnikowa autentykacja (2FA)
@@ -79,3 +79,12 @@
 - [ ] Statystyki zaawansowane z wykresami
 - [ ] System afiliacyjny
 - [ ] Discord/Slack integracja dla powiadomień
+
+
+## Faza 10: System wielojęzyczności (i18n)
+- [ ] Dodanie kolumny language do tabeli users
+- [ ] Implementacja tłumaczeń (polski + angielski)
+- [ ] Przełącznik języka w ustawieniach
+- [ ] Tłumaczenie całego interfejsu
+- [ ] Testowanie wielojęzyczności
+- [ ] Publikacja na GitHub

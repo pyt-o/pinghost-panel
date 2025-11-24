@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import Home from "./pages/Home";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -17,6 +18,7 @@ import UserServerDetails from "./pages/user/UserServerDetails";
 import UserTickets from "./pages/user/UserTickets";
 import UserTicketDetails from "./pages/user/UserTicketDetails";
 import UserCredits from "./pages/user/UserCredits";
+import Settings from "./pages/Settings";
 
 function Router() {
   return (
@@ -34,10 +36,11 @@ function Router() {
       {/* User routes */}
       <Route path={"/dashboard"} component={UserDashboard} />
       <Route path={"/servers"} component={UserServers} />
-      <Route path={"/servers/:id"} component={UserServerDetails} />
+           <Route path={"/:id"} component={UserServerDetails} />
       <Route path={"/tickets"} component={UserTickets} />
       <Route path={"/tickets/:id"} component={UserTicketDetails} />
       <Route path={"/credits"} component={UserCredits} />
+      <Route path={"/settings"} component={Settings} />
       
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
@@ -48,12 +51,14 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider defaultTheme="dark">
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }

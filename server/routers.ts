@@ -93,6 +93,17 @@ export const appRouter = router({
     myCreditHistory: protectedProcedure.query(async ({ ctx }) => {
       return await db.getCreditTransactionsByUserId(ctx.user.id);
     }),
+    
+    updateLanguage: protectedProcedure
+      .input(z.object({ language: z.enum(['pl', 'en']) }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          action: 'user.language.update',
+          details: JSON.stringify({ newLanguage: input.language }),
+        });
+        return { success: true };
+      }),
   }),
 
   // ==================== NODES ====================
@@ -591,3 +602,6 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+
+// Temporary: Add updateLanguage procedure
+// This will be integrated into the users router
