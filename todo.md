@@ -60,7 +60,7 @@
 - [x] Dokumentacja API
 - [x] Instrukcja instalacji i konfiguracji
 - [x] README.md z opisem projektu
-- [ ] Utworzenie checkpointu
+- [x] Utworzenie checkpointu
 
 ## Faza 9: Publikacja
 - [ ] Przygotowanie repozytorium GitHub
