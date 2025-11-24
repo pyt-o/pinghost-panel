@@ -27,7 +27,14 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
+type MenuItem = {
+  icon: any;
+  label: string;
+  href?: string;
+  path?: string;
+};
+
+const defaultMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Page 1", path: "/" },
   { icon: Users, label: "Page 2", path: "/some-path" },
 ];
@@ -39,9 +46,12 @@ const MAX_WIDTH = 480;
 
 export default function DashboardLayout({
   children,
+  navItems,
 }: {
   children: React.ReactNode;
+  navItems?: MenuItem[];
 }) {
+  const menuItems = navItems || defaultMenuItems;
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
@@ -99,7 +109,7 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
+      <DashboardLayoutContent setSidebarWidth={setSidebarWidth} menuItems={menuItems}>
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
@@ -109,11 +119,13 @@ export default function DashboardLayout({
 type DashboardLayoutContentProps = {
   children: React.ReactNode;
   setSidebarWidth: (width: number) => void;
+  menuItems: MenuItem[];
 };
 
 function DashboardLayoutContent({
   children,
   setSidebarWidth,
+  menuItems,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
@@ -121,7 +133,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const activeMenuItem = menuItems.find(item => (item.path || item.href) === location);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -210,12 +222,13 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
-                const isActive = location === item.path;
+                const itemPath = item.path || item.href || '/';
+                const isActive = location === itemPath;
                 return (
-                  <SidebarMenuItem key={item.path}>
+                  <SidebarMenuItem key={itemPath}>
                     <SidebarMenuButton
                       isActive={isActive}
-                      onClick={() => setLocation(item.path)}
+                      onClick={() => setLocation(itemPath)}
                       tooltip={item.label}
                       className={`h-10 transition-all font-normal`}
                     >
