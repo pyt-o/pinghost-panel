@@ -82,9 +82,9 @@
 
 
 ## Faza 10: System wielojęzyczności (i18n)
-- [ ] Dodanie kolumny language do tabeli users
-- [ ] Implementacja tłumaczeń (polski + angielski)
-- [ ] Przełącznik języka w ustawieniach
-- [ ] Tłumaczenie całego interfejsu
-- [ ] Testowanie wielojęzyczności
-- [ ] Publikacja na GitHub
+- [x] Dodanie kolumny language do tabeli users
+- [x] Implementacja tłumaczeń (polski + angielski)
+- [x] Przełącznik języka w ustawieniach
+- [x] Tłumaczenie całego interfejsu
+- [x] Testowanie wielojęzyczności
+- [x] Publikacja na GitHub
