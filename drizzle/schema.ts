@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, serial } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -102,6 +102,7 @@ export const servers = mysqlTable("servers", {
   billingCycle: mysqlEnum("billingCycle", ["hourly", "daily", "monthly"]).default("monthly").notNull(),
   lastBilledAt: timestamp("lastBilledAt"),
   expiresAt: timestamp("expiresAt"),
+  autoRenew: boolean("auto_renew").default(false).notNull(),
   // Timestamps
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -213,3 +214,117 @@ export const activityLogs = mysqlTable("activityLogs", {
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = typeof activityLogs.$inferInsert;
+
+/**
+ * Eggs - Server templates/configurations
+ */
+export const eggs = mysqlTable("eggs", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  author: varchar("author", { length: 255 }),
+  dockerImage: varchar("dockerImage", { length: 255 }).notNull(),
+  startupCommand: text("startupCommand").notNull(),
+  configFiles: text("configFiles"), // JSON array of config file templates
+  category: varchar("category", { length: 100 }).notNull(), // e.g., "minecraft", "csgo", "nodejs", "python"
+  icon: varchar("icon", { length: 255 }), // URL to icon image
+  minRam: int("minRam").default(512).notNull(), // Minimum RAM in MB
+  minDisk: int("minDisk").default(1024).notNull(), // Minimum disk in MB
+  minCpu: int("minCpu").default(50).notNull(), // Minimum CPU percentage
+  isActive: boolean("isActive").default(true).notNull(),
+  downloadCount: int("downloadCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Egg = typeof eggs.$inferSelect;
+export type InsertEgg = typeof eggs.$inferInsert;
+
+/**
+ * Marketplace items - Plugins, mods, addons
+ */
+export const marketplaceItems = mysqlTable("marketplaceItems", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  author: varchar("author", { length: 255 }),
+  category: varchar("category", { length: 100 }).notNull(), // e.g., "plugin", "mod", "theme", "script"
+  serverType: varchar("serverType", { length: 100 }).notNull(), // Compatible server type
+  version: varchar("version", { length: 50 }).notNull(),
+  downloadUrl: text("downloadUrl").notNull(),
+  installScript: text("installScript"), // Script to install the item
+  icon: varchar("icon", { length: 255 }), // URL to icon image
+  price: int("price").default(0).notNull(), // Credits required (0 = free)
+  isActive: boolean("isActive").default(true).notNull(),
+  downloadCount: int("downloadCount").default(0).notNull(),
+  rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00"), // Average rating 0.00-5.00
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MarketplaceItem = typeof marketplaceItems.$inferSelect;
+export type InsertMarketplaceItem = typeof marketplaceItems.$inferInsert;
+
+/**
+ * Server installed items - Tracking what's installed on each server
+ */
+export const serverInstalledItems = mysqlTable("serverInstalledItems", {
+  id: int("id").autoincrement().primaryKey(),
+  serverId: int("serverId").notNull(),
+  marketplaceItemId: int("marketplaceItemId").notNull(),
+  installedAt: timestamp("installedAt").defaultNow().notNull(),
+  status: mysqlEnum("status", ["installing", "installed", "failed", "uninstalled"]).default("installing").notNull(),
+});
+
+export type ServerInstalledItem = typeof serverInstalledItems.$inferSelect;
+export type InsertServerInstalledItem = typeof serverInstalledItems.$inferInsert;
+
+/**
+ * Chat messages - AI chatbot history
+ */
+export const chatMessages = mysqlTable("chatMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  sessionId: varchar("sessionId", { length: 255 }).notNull(),
+  role: mysqlEnum("role", ["user", "assistant", "system"]).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = typeof chatMessages.$inferInsert;
+
+
+/**
+ * Backups - Server backups
+ */
+export const backups = mysqlTable("backups", {
+  id: int("id").autoincrement().primaryKey(),
+  serverId: int("serverId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  size: int("size").notNull(), // Size in bytes
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("completed").notNull(),
+});
+
+export type Backup = typeof backups.$inferSelect;
+export type InsertBackup = typeof backups.$inferInsert;
+
+
+// 2FA
+export const twoFactorSecrets = mysqlTable('two_factor_secrets', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull().unique(),
+  secret: text('secret').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Marketplace Reviews
+export const marketplaceReviews = mysqlTable('marketplace_reviews', {
+  id: serial('id').primaryKey(),
+  itemId: int('item_id').notNull(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  rating: int('rating').notNull(),
+  comment: text('comment'),
+  createdAt: timestamp('created_at').defaultNow(),
+});

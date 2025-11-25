@@ -35,8 +35,8 @@ type MenuItem = {
 };
 
 const defaultMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: Users, label: "Users", path: "/users" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -259,6 +259,9 @@ function DashboardLayoutContent({
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
                       {user?.email || "-"}
                     </p>
+                    <p className="text-xs text-muted-foreground truncate mt-1.5 capitalize">
+                      {user?.role}
+                    </p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
@@ -268,7 +271,7 @@ function DashboardLayoutContent({
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  <span>{user?.role === 'admin' ? 'Panel Admina' : 'Wyloguj się'}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

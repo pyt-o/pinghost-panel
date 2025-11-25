@@ -134,10 +134,10 @@ DATABASE_URL=mysql://pinghost:TWOJE_HASLO@localhost:3306/pinghost_panel
 # JWT Secret (wygeneruj losowy string)
 JWT_SECRET=wygeneruj_losowy_string_min_32_znaki
 
-# OAuth (jeśli używasz Manus OAuth, w przeciwnym razie skonfiguruj własny)
+# OAuth (skonfiguruj własny system OAuth)
 VITE_APP_ID=twoj_app_id
-OAUTH_SERVER_URL=https://api.manus.im
-VITE_OAUTH_PORTAL_URL=https://login.manus.im
+OAUTH_SERVER_URL=https://twoja-domena.com/api/oauth
+VITE_OAUTH_PORTAL_URL=https://twoja-domena.com/login
 OWNER_OPEN_ID=twoj_owner_id
 OWNER_NAME=Twoje Imię
 

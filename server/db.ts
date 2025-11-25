@@ -1,4 +1,4 @@
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -10,7 +10,13 @@ import {
   payments, InsertPayment,
   tickets, InsertTicket,
   ticketMessages, InsertTicketMessage,
-  activityLogs, InsertActivityLog
+  activityLogs, InsertActivityLog,
+  eggs, InsertEgg,
+  marketplaceItems, InsertMarketplaceItem,
+  serverInstalledItems, InsertServerInstalledItem,
+  chatMessages, InsertChatMessage,
+  twoFactorSecrets,
+  marketplaceReviews,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -415,4 +421,225 @@ export async function getSystemStats() {
     activeServers: activeServers?.count || 0,
     openTickets: openTickets?.count || 0,
   };
+}
+
+// ==================== EGGS ====================
+
+export async function getAllEggs() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(eggs).orderBy(desc(eggs.createdAt));
+}
+
+export async function getActiveEggs() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(eggs).where(eq(eggs.isActive, true)).orderBy(desc(eggs.downloadCount));
+}
+
+export async function getEggById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(eggs).where(eq(eggs.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getEggsByCategory(category: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(eggs).where(and(eq(eggs.category, category), eq(eggs.isActive, true)));
+}
+
+export async function createEgg(egg: InsertEgg) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(eggs).values(egg);
+}
+
+export async function updateEgg(id: number, data: Partial<InsertEgg>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(eggs).set(data).where(eq(eggs.id, id));
+}
+
+export async function deleteEgg(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(eggs).where(eq(eggs.id, id));
+}
+
+export async function incrementEggDownloadCount(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(eggs).set({ downloadCount: sql`${eggs.downloadCount} + 1` }).where(eq(eggs.id, id));
+}
+
+// ==================== MARKETPLACE ====================
+
+export async function getAllMarketplaceItems() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(marketplaceItems).orderBy(desc(marketplaceItems.createdAt));
+}
+
+export async function getActiveMarketplaceItems() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(marketplaceItems).where(eq(marketplaceItems.isActive, true)).orderBy(desc(marketplaceItems.downloadCount));
+}
+
+export async function getMarketplaceItemById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(marketplaceItems).where(eq(marketplaceItems.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getMarketplaceItemsByServerType(serverType: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(marketplaceItems).where(
+    and(
+      or(eq(marketplaceItems.serverType, serverType), eq(marketplaceItems.serverType, "all")),
+      eq(marketplaceItems.isActive, true)
+    )
+  );
+}
+
+export async function getMarketplaceItemsByCategory(category: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(marketplaceItems).where(and(eq(marketplaceItems.category, category), eq(marketplaceItems.isActive, true)));
+}
+
+export async function createMarketplaceItem(item: InsertMarketplaceItem) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(marketplaceItems).values(item);
+}
+
+export async function updateMarketplaceItem(id: number, data: Partial<InsertMarketplaceItem>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(marketplaceItems).set(data).where(eq(marketplaceItems.id, id));
+}
+
+export async function deleteMarketplaceItem(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(marketplaceItems).where(eq(marketplaceItems.id, id));
+}
+
+export async function incrementMarketplaceItemDownloadCount(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(marketplaceItems).set({ downloadCount: sql`${marketplaceItems.downloadCount} + 1` }).where(eq(marketplaceItems.id, id));
+}
+
+// ==================== SERVER INSTALLED ITEMS ====================
+
+export async function getServerInstalledItems(serverId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(serverInstalledItems).where(eq(serverInstalledItems.serverId, serverId));
+}
+
+export async function createServerInstalledItem(item: InsertServerInstalledItem) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(serverInstalledItems).values(item);
+}
+
+export async function updateServerInstalledItemStatus(id: number, status: "installing" | "installed" | "failed" | "uninstalled") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(serverInstalledItems).set({ status }).where(eq(serverInstalledItems.id, id));
+}
+
+export async function deleteServerInstalledItem(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(serverInstalledItems).where(eq(serverInstalledItems.id, id));
+}
+
+// ==================== CHAT MESSAGES ====================
+
+export async function getChatMessagesBySession(sessionId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(chatMessages).where(eq(chatMessages.sessionId, sessionId)).orderBy(chatMessages.createdAt);
+}
+
+export async function getChatMessagesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(chatMessages).where(eq(chatMessages.userId, userId)).orderBy(desc(chatMessages.createdAt));
+}
+
+export async function createChatMessage(message: InsertChatMessage) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(chatMessages).values(message);
+}
+
+export async function deleteChatMessagesBySession(sessionId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(chatMessages).where(eq(chatMessages.sessionId, sessionId));
+}
+
+
+// ==================== 2FA ====================
+
+export async function get2FASecretByUserId(userId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(twoFactorSecrets).where(eq(twoFactorSecrets.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function create2FASecret(userId: string, secret: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(twoFactorSecrets).values({ userId, secret });
+}
+
+export async function delete2FASecret(userId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(twoFactorSecrets).where(eq(twoFactorSecrets.userId, userId));
+}
+
+// ==================== MARKETPLACE REVIEWS ====================
+
+export async function createMarketplaceReview(review: { itemId: number, userId: string, rating: number, comment?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(marketplaceReviews).values(review);
+}
+
+export async function getMarketplaceReviewsByItemId(itemId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(marketplaceReviews).where(eq(marketplaceReviews.itemId, itemId)).orderBy(desc(marketplaceReviews.createdAt));
+}
+
+export async function getMarketplaceReviewByItemAndUser(itemId: number, userId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(marketplaceReviews).where(and(eq(marketplaceReviews.itemId, itemId), eq(marketplaceReviews.userId, userId))).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateMarketplaceItemRating(itemId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  const [avgRatingResult] = await db.select({
+    avgRating: sql<number>`avg(${marketplaceReviews.rating})`,
+  }).from(marketplaceReviews).where(eq(marketplaceReviews.itemId, itemId));
+
+  const avgRating = avgRatingResult?.avgRating ? parseFloat(avgRatingResult.avgRating.toFixed(2)) : 0.00;
+
+  await db.update(marketplaceItems).set({ rating: avgRating }).where(eq(marketplaceItems.id, itemId));
 }

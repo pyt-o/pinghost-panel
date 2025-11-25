@@ -6,6 +6,8 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { paymentRouter } from "./payment-router";
+import { twoFactorAuthRouter } from "./two-factor-auth-router";
+import { marketplaceReviewRouter } from "./marketplace-review-router";
 
 // Admin-only middleware
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -18,6 +20,8 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
   payment: paymentRouter,
+  twoFactorAuth: twoFactorAuthRouter,
+  marketplaceReviews: marketplaceReviewRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -599,9 +603,278 @@ export const appRouter = router({
         return await db.getAllActivityLogs(input.limit);
       }),
   }),
+
+  // ==================== EGGS ====================
+  eggs: router({
+    list: publicProcedure.query(async () => {
+      return await db.getActiveEggs();
+    }),
+    
+    listAll: adminProcedure.query(async () => {
+      return await db.getAllEggs();
+    }),
+    
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getEggById(input.id);
+      }),
+    
+    getByCategory: publicProcedure
+      .input(z.object({ category: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getEggsByCategory(input.category);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        author: z.string().optional(),
+        dockerImage: z.string(),
+        startupCommand: z.string(),
+        category: z.string(),
+        minRam: z.number().default(512),
+        minDisk: z.number().default(1024),
+        minCpu: z.number().default(50),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createEgg(input);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          action: 'egg.create',
+          details: JSON.stringify({ name: input.name }),
+        });
+        return { success: true };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        author: z.string().optional(),
+        dockerImage: z.string().optional(),
+        startupCommand: z.string().optional(),
+        category: z.string().optional(),
+        minRam: z.number().optional(),
+        minDisk: z.number().optional(),
+        minCpu: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        await db.updateEgg(id, data);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          action: 'egg.update',
+          details: JSON.stringify({ eggId: id, changes: data }),
+        });
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteEgg(input.id);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          action: 'egg.delete',
+          details: JSON.stringify({ eggId: input.id }),
+        });
+        return { success: true };
+      }),
+  }),
+
+  // ==================== MARKETPLACE ====================
+  marketplace: router({
+    list: publicProcedure.query(async () => {
+      return await db.getActiveMarketplaceItems();
+    }),
+    
+    listAll: adminProcedure.query(async () => {
+      return await db.getAllMarketplaceItems();
+    }),
+    
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getMarketplaceItemById(input.id);
+      }),
+    
+    getByServerType: publicProcedure
+      .input(z.object({ serverType: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getMarketplaceItemsByServerType(input.serverType);
+      }),
+    
+    getByCategory: publicProcedure
+      .input(z.object({ category: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getMarketplaceItemsByCategory(input.category);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        author: z.string().optional(),
+        category: z.string(),
+        serverType: z.string(),
+        version: z.string(),
+        downloadUrl: z.string(),
+        installScript: z.string().optional(),
+        price: z.number().default(0),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createMarketplaceItem(input);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          action: 'marketplace.create',
+          details: JSON.stringify({ name: input.name }),
+        });
+        return { success: true };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        author: z.string().optional(),
+        category: z.string().optional(),
+        serverType: z.string().optional(),
+        version: z.string().optional(),
+        downloadUrl: z.string().optional(),
+        installScript: z.string().optional(),
+        price: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        await db.updateMarketplaceItem(id, data);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          action: 'marketplace.update',
+          details: JSON.stringify({ itemId: id, changes: data }),
+        });
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteMarketplaceItem(input.id);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          action: 'marketplace.delete',
+          details: JSON.stringify({ itemId: input.id }),
+        });
+        return { success: true };
+      }),
+    
+    install: protectedProcedure
+      .input(z.object({ serverId: z.number(), itemId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const server = await db.getServerById(input.serverId);
+        if (!server) throw new TRPCError({ code: 'NOT_FOUND', message: 'Server not found' });
+        if (ctx.user.role !== 'admin' && server.userId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+        }
+        
+        const item = await db.getMarketplaceItemById(input.itemId);
+        if (!item) throw new TRPCError({ code: 'NOT_FOUND', message: 'Marketplace item not found' });
+        
+        // Check if user has enough credits
+        if (item.price > 0) {
+          const user = await db.getUserById(ctx.user.id);
+          if (!user || user.credits < item.price) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Insufficient credits' });
+          }
+          
+          // Deduct credits
+          const balanceBefore = user.credits;
+          const balanceAfter = balanceBefore - item.price;
+          await db.updateUserCredits(ctx.user.id, balanceAfter);
+          await db.createCreditTransaction({
+            userId: ctx.user.id,
+            amount: -item.price,
+            type: 'usage',
+            description: `Installed ${item.name}`,
+            relatedServerId: input.serverId,
+            balanceBefore,
+            balanceAfter,
+          });
+        }
+        
+        // Create installed item record
+        await db.createServerInstalledItem({
+          serverId: input.serverId,
+          marketplaceItemId: input.itemId,
+          status: 'installing',
+        });
+        
+        await db.incrementMarketplaceItemDownloadCount(input.itemId);
+        
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          action: 'marketplace.install',
+          details: JSON.stringify({ serverId: input.serverId, itemId: input.itemId }),
+        });
+        
+        return { success: true };
+      }),
+  }),
+
+  // ==================== CHAT ====================
+  chat: router({
+    getMessages: protectedProcedure
+      .input(z.object({ sessionId: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getChatMessagesBySession(input.sessionId);
+      }),
+    
+    sendMessage: protectedProcedure
+      .input(z.object({
+        sessionId: z.string(),
+        message: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Save user message
+        await db.createChatMessage({
+          userId: ctx.user.id,
+          sessionId: input.sessionId,
+          role: 'user',
+          content: input.message,
+        });
+        
+        // Get conversation history
+        const messages = await db.getChatMessagesBySession(input.sessionId);
+        
+        // Call LLM (this would use the invokeLLM function from _core/llm.ts)
+        // For now, return a placeholder response
+        const response = "Dziękuję za wiadomość! Jestem asystentem PingHost. Jak mogę Ci pomóc z hostingiem serwerów?";
+        
+        // Save assistant response
+        await db.createChatMessage({
+          userId: ctx.user.id,
+          sessionId: input.sessionId,
+          role: 'assistant',
+          content: response,
+        });
+        
+        return { response };
+      }),
+    
+    clearSession: protectedProcedure
+      .input(z.object({ sessionId: z.string() }))
+      .mutation(async ({ input }) => {
+        await db.deleteChatMessagesBySession(input.sessionId);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
-
-// Temporary: Add updateLanguage procedure
-// This will be integrated into the users router
